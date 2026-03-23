@@ -1,0 +1,56 @@
+name: Deploy to agentaws_server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build & Deploy Docker service
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+
+            # Clone or pull latest code
+            if [ -d "/opt/agent-executor/.git" ]; then
+              cd /opt/agent-executor
+              git pull origin main
+            else
+              sudo mkdir -p /opt/agent-executor
+              sudo chown $USER:$USER /opt/agent-executor
+              git clone https://github.com/bgw-dev-peak/agent-executor.git /opt/agent-executor
+              cd /opt/agent-executor
+            fi
+
+            # Build Docker image
+            docker build -t agent-executor:latest .
+
+            # Stop and remove existing container (if running)
+            docker stop agent-executor 2>/dev/null || true
+            docker remove agent-executor 2>/dev/null || true
+
+            # Run new container
+            docker run -d \
+              --name agent-executor \
+              --restart unless-stopped \
+              -p 8086:8086 \
+              agent-executor:latest
+
+            echo "Deployment complete. Container status:"
+            docker ps --filter name=agent-executor
+          EOF
