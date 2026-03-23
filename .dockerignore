@@ -1,0 +1,9 @@
+.venv/
+.git/
+docs/
+*.md
+REQUIREMENTS.md
+DESIGN.md
+IMPL_CHECKLIST.md
+TEST_RESULTS.md
+VALIDATION_REPORT.md
