@@ -42,7 +42,7 @@ jobs:
 
             # Stop and remove existing container (if running)
             docker stop agent-executor 2>/dev/null || true
-            docker remove agent-executor 2>/dev/null || true
+            docker rm agent-executor 2>/dev/null || true
 
             # Run new container
             docker run -d \
