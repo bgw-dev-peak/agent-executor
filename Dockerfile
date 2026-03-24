@@ -12,7 +12,9 @@ RUN npm install -g @anthropic-ai/claude-code
 
 WORKDIR /app
 
-COPY server.py .
+# Code is NOT baked into the image — it is mounted from the host at runtime
+# via: -v /opt/agent-executor:/app
+# This ensures the live codebase always lives on the host filesystem.
 
 EXPOSE 8086
 
